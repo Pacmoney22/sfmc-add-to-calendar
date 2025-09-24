@@ -1,0 +1,109 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+%%[
+
+/* Settings */ 
+set @headerimage=""
+
+
+
+/* Initial Settings */
+set @error = ""
+
+
+/* Code Starts Here */
+IF QueryParameter("test") == 1 THEN
+set @startDate = Now()
+set @startDate = SystemDateToLocalDate(@startDate)
+set @endDate = DateAdd(@startDate,1,"H")
+set @loc = "123 Someplace Dr."
+set @eventName = "Test Event"
+ELSE
+set @startDate = QueryParameter("StartDate")
+set @endDate = QueryParameter("EndDate")
+set @loc = QueryParameter("Location")
+set @eventName = QueryParameter("Event")
+ENDIF
+
+IF EMPTY(@startDate) THEN
+set @error = "A valid Start Date and/or End Date was not provided. <br>Please use a valid link."
+ELSE
+set @icsStartDate = FormatDate(@startDate, "YYYYMMDD")
+set @icsStartMin = DatePart(@startDate, "MI")
+set @icsStart = Concat(@icsStartDate,"T', @icsStartMin, 00000)
+set @googleStart = ReplaceList(FormatDate(@startDate, "iso"),'','-',' ',':')
+
+set @icsEndDate = FormatDate(@endDate, "YYYYMMDD")
+set @icsEndMin = DatePart(@endDate, "MI")
+set @icsEnd = Concat(@icsEndDate, "T",@icsEndMin, 00000)
+set @googleEnd = ReplaceList(FormatDate(@endDate,"iso"),'','-',' ',':')
+
+set @Location = ProperCase(@loc)
+ENDIF
+
+]%%
+<div class="container">
+  <div class="row">
+    <div class="col">
+    </div>
+      <div class="col-6 text-center">
+        <img src="%%=v(@headerimage)=%%"><br><br>
+        %%[IF EMPTY(@error) THEN]%%
+<span><b>Location:&nbsp;</b></span><span class="Location">%%=v(@Location)=%%<br>
+<span><b>Start Date/Time:&nbsp;</b></span><span>%%=FormatDate(@startdate, "f")=%%</span><br><br>
+<span class="end-time" style="display:none;">%%=v(@icsEnd)=%%</span>
+<span class="start-time" style="display:none;">%%=v(@icsStart)=%%</span>
+<span class="event-name" style="display:none;">%%=v(@eventName)=%%</span>
+<button type="button" class="caladd btn btn-primary btn-lg">Add to Calendar (.ics)</button><br><br>
+<a class="btn btn-primary btn-lg" href="%%=Concat("http://www.google.com/calendar/render?
+action=TEMPLATE&text=",@eventName,"&dates=",@googleStart,"/",@googleEnd,"&location=",@Location,"&sf=true&amp;output=xml")=%%">Add to Google Calendar</a>
+    </span>
+    %%[ELSE]%%
+        <span>%%=v(@error)=%%</span>
+    %%[ENDIF]%%
+    </div>
+<div class="col">
+        </div>
+</div>
+</div>
+
+<script type="text/javascript">
+    msgData1 = $('.start-time').text();
+    msgData2 = $('.end-time').text();
+    msgData3 = $('.Location').text();
+    msgData4 = $('.event-name').text();
+
+    var icsMSG =
+    "BEGIN:VCALENDAR\n" +
+    "CALSCALE:GREGORIAN\n" +
+    "METHOD:PUBLISH\n" +
+    "PRODID:-//Add To Cal//EN\n" +
+    "VERSION:2.0\n" +
+    "BEGIN:VEVENT\n" +
+    "UID:test-1\n" +
+    "DTSTAMP:" +
+    msgData1 +
+    "\n" +
+    "DTSTART:" +
+    msgData1 +
+    "\n" +
+    "DTEND:" +
+    msgData2 +
+    "\n" +
+    "LOCATION:"+
+    msgData3 +
+    "\n"+
+    "SUMMARY:" +
+    msgData4 +
+    "\n" +
+    "END:VEVENT\n" +
+    "END:VCALENDAR";
+
+    $('.caladd').click(function(){
+        window.open( "data:text/calendar;charset=utf-8," + escape(icsMSG));
+    });
+
+</script>
